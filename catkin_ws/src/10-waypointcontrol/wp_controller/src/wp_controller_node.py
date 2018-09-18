@@ -35,6 +35,7 @@ class WPControllerNode(object):
         self.last_request = rospy.Time.now()
 
 
+
         # Subscribers
         self.sub_state = rospy.Subscriber("mavros/state", State, self.cbState, queue_size=10)
         self.sub_home = rospy.Subscriber("/mavros/home_position/home", HomePosition, self.cbHome, queue_size=10)
@@ -42,7 +43,9 @@ class WPControllerNode(object):
 
         # Publishers
         self.local_pos_pub = rospy.Publisher('mavros/setpoint_position/local', PoseStamped, queue_size=10)
-        #self.global_pos_pub = rospy.Publisher('mavros/setpoint_raw/global', GlobalPositionTarget, queue_size=10)
+        self.global_pos_pub = rospy.Publisher('mavros/setpoint_position/global', GlobalPositionTarget, queue_size=10)
+
+
 
         # Services
         self.arming_client = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
@@ -79,7 +82,7 @@ class WPControllerNode(object):
 
 
         # Check if distance to waypoint is small enough to count it as reached TODO may be wrong approximation and TODO change for RTK
-        if self.getDistanceBetweenGPS(self.current_pos, self.waypoints[self.currentWPidx]) < 4:
+        if self.getDistanceBetweenGPS(self.current_pos, self.waypoints[self.currentWPidx]) < 2:
             self.currentWPidx += 1
             if self.currentWPidx == self.maxWPidx:
                 rospy.loginfo("MISSION DONE")
@@ -115,10 +118,19 @@ class WPControllerNode(object):
         pose.pose.position.x = 6371000 * radians(lonWP - lonHome) * cos(radians(latHome))
         pose.pose.position.y = 6371000 * radians(latWP - latHome)
         pose.pose.position.z = altWP - altHome
-        self.local_pos_pub.publish(pose)
+        #self.local_pos_pub.publish(pose)
 
 
+        msg = GlobalPositionTarget()
 
+        msg.latitude = latWP
+        msg.longitude = lonWP
+        msg.altitude = altWP
+        msg.header.stamp = rospy.Time.now()
+        msg.coordinate_frame = 5
+        msg.type_mask = 0b111111111000
+        msg.yaw = 12.0
+        self.global_pos_pub.publish(msg)
     ### END callback functions ###
 
 

@@ -1,0 +1,3 @@
+[submodule "catkin_ws/src/20-mavlink/mavros"]
+	path = catkin_ws/src/20-mavlink/mavros
+	url = git@github.com:mavlink/mavros.git
