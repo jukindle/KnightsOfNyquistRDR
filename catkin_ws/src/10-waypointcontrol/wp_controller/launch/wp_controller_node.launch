@@ -1,0 +1,18 @@
+<launch>
+
+    <arg name="pkg_name" value="wp_controller"/>
+    <arg name="node_name" default="wp_controller_node"/>
+
+        <!-- run local -->
+        <node name="$(arg node_name)" pkg="$(arg pkg_name)" type="$(arg node_name).py" output="screen" clear_params="true" >
+          <!--  <rosparam command="load" file="$(find duckietown)/config/$(arg config)/$(arg pkg_name)/$(arg node_name)/$(arg param_file_name).yaml"/>
+      -->
+      </node>
+
+
+    <!-- Publications -->
+
+    <!-- Subscriptions -->
+
+
+</launch>

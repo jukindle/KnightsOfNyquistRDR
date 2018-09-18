@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+<!-- general convention on remappings is that we remap the "subscribers" -->
+
+
+
+<!-- upload urdf -->
+  <!-- <param name="robot_description" textfile="/home/julien/r2d2lidar/robot_models/r2d2.urdf" /> -->
+	<!-- robot state publisher -->
+  <!-- <node pkg="robot_state_publisher" type="state_publisher" name="robot_state_publisher" /> -->
+
+	<!-- <param name="use_gui" value="true" /> -->
+  <!-- <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher"/> -->
+
+	<!-- start switch args -->
+	<arg name="bridge" default="true"/>
+	<arg name="wpcontrol" default="true"/>
+
+
+	<!-- end switch args -->
+
+
+
+	<!-- Start bridge -->
+	<group if="$(arg bridge)">
+		<!-- <remap from="/scan" to="/rplidar/laser_scan"/> -->
+		<include  file="$(find mavros)/launch/px4.launch">
+			<arg name="fcu_url" value="udp://:14550@127.0.0.1:14556"/>
+		</include>
+	</group>
+	<!-- End bridge -->
+
+	<!-- Start wpcontrol -->
+	<group if="$(arg wpcontrol)">
+		<!-- <remap from="/scan" to="/rplidar/laser_scan"/> -->
+		<include  file="$(find wp_controller)/launch/wp_controller_node.launch">
+		</include>
+	</group>
+	<!-- End wpcontrol -->
+
+
+
+
+
+</launch>

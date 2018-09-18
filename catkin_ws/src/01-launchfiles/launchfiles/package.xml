@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<package>
+  <name>launchfiles</name>
+  <version>1.0.0</version>
+  <description>Package with launch files for overall demos</description>
+
+  <maintainer email="julien.kindle@gmail.com">Julien Kindle</maintainer>
+  <license>GPLv3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
