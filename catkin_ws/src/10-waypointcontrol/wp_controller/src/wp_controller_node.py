@@ -4,7 +4,7 @@ from mavros_msgs.msg import State, HomePosition, GlobalPositionTarget
 from mavros_msgs.srv import CommandBool, SetMode
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix
-from math import sin, cos, sqrt, radians
+from math import sin, cos, sqrt, radians, atan, atan2, pi
 
 import json
 
@@ -112,12 +112,12 @@ class WPControllerNode(object):
         latWP = self.waypoints[self.currentWPidx][0]
         lonWP = self.waypoints[self.currentWPidx][1]
         altWP = self.waypoints[self.currentWPidx][2]
-        latHome = self.home_pos[0]
-        lonHome = self.home_pos[1]
-        altHome = self.home_pos[2]
-        pose.pose.position.x = 6371000 * radians(lonWP - lonHome) * cos(radians(latHome))
-        pose.pose.position.y = 6371000 * radians(latWP - latHome)
-        pose.pose.position.z = altWP - altHome
+        # latHome = self.home_pos[0]
+        # lonHome = self.home_pos[1]
+        # altHome = self.home_pos[2]
+        # pose.pose.position.x = 6371000 * radians(lonWP - lonHome) * cos(radians(latHome))
+        # pose.pose.position.y = 6371000 * radians(latWP - latHome)
+        # pose.pose.position.z = altWP - altHome
         #self.local_pos_pub.publish(pose)
 
 
@@ -128,15 +128,31 @@ class WPControllerNode(object):
         msg.altitude = altWP
         msg.header.stamp = rospy.Time.now()
         msg.coordinate_frame = 5
-        msg.type_mask = 0b111111111000
-        msg.yaw = 12.0
+        msg.type_mask = 0b101111111000
+
+
+        msg.yaw = self.getNextYaw()
         self.global_pos_pub.publish(msg)
     ### END callback functions ###
 
 
     ### BEGIN internal functions ###
 
-    # Initialize serial communication
+    def getNextYaw(self):
+
+        if self.currentWPidx >= self.maxWPidx -1: return 0.0
+        latWP = self.waypoints[self.currentWPidx][0]
+        lonWP = self.waypoints[self.currentWPidx][1]
+        altWP = self.waypoints[self.currentWPidx][2]
+
+        latWPn = self.waypoints[self.currentWPidx+1][0]
+        lonWPn = self.waypoints[self.currentWPidx+1][1]
+        altWPn = self.waypoints[self.currentWPidx+1][2]
+
+        dx = 6371000 * radians(lonWP - lonWPn) * cos(radians(latWP))
+        dy = 6371000 * radians(latWP - latWPn)
+
+        return (((atan2(dy, dx) + pi) + pi) % (2*pi)) - pi
 
     ### END internal functions ###
 
