@@ -2,7 +2,7 @@
 import rospy
 from mavros_msgs.msg import State, HomePosition, GlobalPositionTarget, ParamValue
 from mavros_msgs.srv import CommandBool, SetMode, ParamSet
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, Vector3, TwistStamped
 from sensor_msgs.msg import NavSatFix
 from math import sin, cos, sqrt, radians, atan, atan2, pi
 
@@ -23,7 +23,7 @@ class WPControllerNode(object):
         # Create array of waypoints
         self.waypoints = []
         for el in data["Waypoints"]:
-            self.waypoints.append([el["lat"], el["lon"], el["alt"], el["vel"] if "vel" in el else 4.0])
+            self.waypoints.append([el["lat"], el["lon"], el["alt"], el["vel"] if "vel" in el else 4.0, el["exa"] if "exa" in el else 1.0])
 
         # Specify current and last waypoint idx
         self.currentWPidx = 0
@@ -45,7 +45,7 @@ class WPControllerNode(object):
         # Publishers
         self.local_pos_pub = rospy.Publisher('mavros/setpoint_position/local', PoseStamped, queue_size=10)
         self.global_pos_pub = rospy.Publisher('mavros/setpoint_position/global', GlobalPositionTarget, queue_size=10)
-
+        self.pub_vel = rospy.Publisher('/mavros/setpoint_velocity/cmd_vel', TwistStamped, queue_size=10)
 
 
         # Services
@@ -86,7 +86,7 @@ class WPControllerNode(object):
 
 
         # Check if distance to waypoint is small enough to count it as reached TODO may be wrong approximation and TODO change for RTK
-        if self.getDistanceBetweenGPS(self.current_pos, self.waypoints[self.currentWPidx]) < 2:
+        if self.getDistanceBetweenGPS(self.current_pos, self.waypoints[self.currentWPidx]) < self.waypoints[self.currentWPidx][4]:
             self.currentWPidx += 1
             if self.currentWPidx == self.maxWPidx:
                 rospy.loginfo("MISSION DONE")
@@ -94,7 +94,7 @@ class WPControllerNode(object):
                 return
 
         # Log info about current waypoint
-        rospy.loginfo("Current waypoint: " + str(self.currentWPidx) + " / " + str(self.maxWPidx))
+        #rospy.loginfo("Current waypoint: " + str(self.currentWPidx) + " / " + str(self.maxWPidx))
 
         # Check if mode needs to be changed for OFFBOARD and ARM vehicle (this is a startup procedure)
         if str(self.current_state.mode) != "OFFBOARD" and rospy.Time.now() - self.last_request > rospy.Duration(5.0):
@@ -117,6 +117,9 @@ class WPControllerNode(object):
         lonWP = self.waypoints[self.currentWPidx][1]
         altWP = self.waypoints[self.currentWPidx][2]
         velWP = self.waypoints[self.currentWPidx][3]
+        latRov = self.current_pos[0]
+        lonRov = self.current_pos[1]
+        altRov = self.current_pos[2]
         # latHome = self.home_pos[0]
         # lonHome = self.home_pos[1]
         # altHome = self.home_pos[2]
@@ -136,20 +139,37 @@ class WPControllerNode(object):
 
 
             msg.yaw = self.getNextYaw()
-            self.global_pos_pub.publish(msg)
+            #self.global_pos_pub.publish(msg)
 
-            par = ParamValue()
-            par.integer = 0
-            par.real = velWP
-            try:
-                self.set_vel("MPC_XY_VEL_MAX", par)
-            except Exception:
-                print("e")
+            msg = TwistStamped()
+
+            x = radians(latWP - latRov) * 6371000 * cos(radians(lonRov))
+            y = radians(lonWP - lonRov) * 6371000
+            z = altWP - altRov
+            scal = sqrt(x**2 + y**2 + z**2)
+            v = 8.0#20.0
+            vx = y / scal * v
+            vy = x / scal * v
+            vz = z / scal * v
+
+            rospy.loginfo(str(x) + " " + str(y) + " " + str(z) )
+            msg.twist.linear.x = vx
+            msg.twist.linear.y = vy
+            msg.twist.linear.z = vz
+            self.pub_vel.publish(msg)
+            # return
+            # par = ParamValue()
+            # par.integer = 0
+            # par.real = velWP
+            # try:
+            #     self.set_vel("MPC_XY_VEL_MAX", par)
+            # except Exception:
+            #     print("e")
 
 
 
 
-                
+
         else:
             pose = PoseStamped()
             pose.pose.position.x = 0
@@ -157,14 +177,15 @@ class WPControllerNode(object):
             pose.pose.position.z = 2.0
             self.local_pos_pub.publish(pose)
 
-            try:
-                par = ParamValue()
-                par.integer = 0
-                par.real = velWP
-                resp = self.set_vel("MPC_XY_VEL_MAX", par)
-                if resp.success: self.ready = True
-            except Exception as e:
-                print(e)
+            if self.current_pos[2] - self.home_pos[2] > 1.8: self.ready = True
+            # try:
+            #     par = ParamValue()
+            #     par.integer = 0
+            #     par.real = velWP
+            #     resp = self.set_vel("MPC_XY_VEL_MAX", par)
+            #     if resp.success: self.ready = True
+            # except Exception as e:
+            #     print(e)
 
 
 
