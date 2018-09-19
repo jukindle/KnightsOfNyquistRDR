@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import rospy
-from mavros_msgs.msg import State, HomePosition, GlobalPositionTarget
-from mavros_msgs.srv import CommandBool, SetMode
+from mavros_msgs.msg import State, HomePosition, GlobalPositionTarget, ParamValue
+from mavros_msgs.srv import CommandBool, SetMode, ParamSet
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import NavSatFix
 from math import sin, cos, sqrt, radians, atan, atan2, pi
@@ -13,6 +13,7 @@ class WPControllerNode(object):
         self.node_name = "Waypoints Controller Node"
 
         self.started = True
+        self.ready = False
 
         # Load JSON file
         with open('/home/julien/RoboDroneRace/KnightsOfNyquistRDR/Path.json') as f:
@@ -22,7 +23,7 @@ class WPControllerNode(object):
         # Create array of waypoints
         self.waypoints = []
         for el in data["Waypoints"]:
-            self.waypoints.append([el["lat"], el["lon"], el["alt"]])
+            self.waypoints.append([el["lat"], el["lon"], el["alt"], el["vel"] if "vel" in el else 4.0])
 
         # Specify current and last waypoint idx
         self.currentWPidx = 0
@@ -50,6 +51,9 @@ class WPControllerNode(object):
         # Services
         self.arming_client = rospy.ServiceProxy('mavros/cmd/arming', CommandBool)
         self.set_mode_client = rospy.ServiceProxy('mavros/set_mode', SetMode)
+        self.set_vel = rospy.ServiceProxy('/mavros/param/set', ParamSet)
+
+
 
         # Timer for main loop
         self.timer_pubcmd = rospy.Timer(rospy.Duration.from_sec(0.05), self.cbPubCmd)
@@ -112,6 +116,7 @@ class WPControllerNode(object):
         latWP = self.waypoints[self.currentWPidx][0]
         lonWP = self.waypoints[self.currentWPidx][1]
         altWP = self.waypoints[self.currentWPidx][2]
+        velWP = self.waypoints[self.currentWPidx][3]
         # latHome = self.home_pos[0]
         # lonHome = self.home_pos[1]
         # altHome = self.home_pos[2]
@@ -120,19 +125,49 @@ class WPControllerNode(object):
         # pose.pose.position.z = altWP - altHome
         #self.local_pos_pub.publish(pose)
 
+        if self.ready:
+            msg = GlobalPositionTarget()
+            msg.latitude = latWP
+            msg.longitude = lonWP
+            msg.altitude = altWP
+            msg.header.stamp = rospy.Time.now()
+            msg.coordinate_frame = 5
+            msg.type_mask = 0b101111111000
 
-        msg = GlobalPositionTarget()
 
-        msg.latitude = latWP
-        msg.longitude = lonWP
-        msg.altitude = altWP
-        msg.header.stamp = rospy.Time.now()
-        msg.coordinate_frame = 5
-        msg.type_mask = 0b101111111000
+            msg.yaw = self.getNextYaw()
+            self.global_pos_pub.publish(msg)
+
+            par = ParamValue()
+            par.integer = 0
+            par.real = velWP
+            try:
+                self.set_vel("MPC_XY_VEL_MAX", par)
+            except Exception:
+                print("e")
 
 
-        msg.yaw = self.getNextYaw()
-        self.global_pos_pub.publish(msg)
+
+
+                
+        else:
+            pose = PoseStamped()
+            pose.pose.position.x = 0
+            pose.pose.position.y = 0
+            pose.pose.position.z = 2.0
+            self.local_pos_pub.publish(pose)
+
+            try:
+                par = ParamValue()
+                par.integer = 0
+                par.real = velWP
+                resp = self.set_vel("MPC_XY_VEL_MAX", par)
+                if resp.success: self.ready = True
+            except Exception as e:
+                print(e)
+
+
+
     ### END callback functions ###
 
 
