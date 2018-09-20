@@ -37,6 +37,12 @@ TODO: this library will throw an error later, just do sudo apt install python-<w
 
 
 ## Usage
+
+Every time you open a new terminal, type (inside the folder)
+
+    source environment.sh
+    
+ 
 Launch recording
 
     roslaunch launchfiles record.launch
