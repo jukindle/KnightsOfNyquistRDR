@@ -35,6 +35,11 @@ TODO: this library will throw an error later, just do sudo apt install python-<w
     
     catkin_make -C catkin_ws
 
+### Install the simulator
+
+    source <(curl -p https://raw.githubusercontent.com/PX4/Devguide/master/build_scripts/ubuntu_sim_common_deps.sh)
+    
+    
 
 ## Usage
 
@@ -43,11 +48,17 @@ Every time you open a new terminal, type (inside the folder)
     source environment.sh
     
  
-Launch recording
+### Launch recording
 
     roslaunch launchfiles record.launch
 
 
-Launch following
+### Launch following
 
     roslaunch launchfiles master.launch
+    
+### Launch simulator
+Go to PXç/Firmware folder and execute:
+    
+    make posix_sitl_default jmavsim
+
