@@ -33,6 +33,8 @@ TODO: this library will throw an error later, just do sudo apt install python-<w
     
     git submodule update --init
     
+    source environment.sh
+    
     catkin_make -C catkin_ws
 
 ### Install the simulator
