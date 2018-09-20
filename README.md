@@ -31,6 +31,8 @@ TODO: this library will throw an error later, just do sudo apt install python-<w
     
     git pull
     
+    git submodule update --init
+    
     catkin_make -C catkin_ws
 
 
