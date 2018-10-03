@@ -39,6 +39,7 @@ class WPControllerNode(object):
         self.sub_home = rospy.Subscriber("/mavros/home_position/home", HomePosition, self.cbHome, queue_size=10) # Home position
         self.sub_position = rospy.Subscriber("/mavros/global_position/global", NavSatFix, self.cbPosition, queue_size=1) # Vehicle position
 
+
         # Publishers
         self.local_pos_pub = rospy.Publisher('mavros/setpoint_position/local', PoseStamped, queue_size=10) # Set position relative to home pos
         #self.global_pos_pub = rospy.Publisher('mavros/setpoint_position/global', GlobalPositionTarget, queue_size=10) # Set global pos

@@ -32,11 +32,11 @@
 	<!-- End bridge -->
 
 	<!-- Start wpcontrol -->
-	<group if="$(arg wpcontrol)">
+	<!-- <group if="$(arg wpcontrol)"> -->
 		<!-- <remap from="/scan" to="/rplidar/laser_scan"/> -->
-		<include  file="$(find wp_controller)/launch/wp_controller_node.launch">
+		<!-- <include  file="$(find wp_controller)/launch/wp_controller_node.launch">
 		</include>
-	</group>
+	</group> -->
 	<!-- End wpcontrol -->
 
 

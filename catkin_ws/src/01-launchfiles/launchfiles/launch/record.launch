@@ -26,6 +26,7 @@
 	<group if="$(arg bridge)">
 		<!-- <remap from="/scan" to="/rplidar/laser_scan"/> -->
 		<include  file="$(find mavros)/launch/px4.launch">
+			<!-- <arg name="fcu_url" default="/dev/ttyACM0:57600" /> CONNECT TO REAL VEHICLE -->
 			<arg name="fcu_url" value="udp://:14540@127.0.0.1:14556"/>
 		</include>
 	</group>
